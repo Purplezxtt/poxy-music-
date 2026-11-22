@@ -1,5 +1,5 @@
 /* Service worker do Poxy Music: guarda o app no aparelho para abrir offline. */
-const CACHE = 'poxy-music-v2';
+const CACHE = 'poxy-music-v3';
 const SHELL = [
   './',
   'index.html',
