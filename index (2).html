@@ -1,0 +1,1116 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Photx</title>
+<meta name="theme-color" content="#0f1012">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Photx">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Slab:wght@500;600&display=swap">
+<style>
+/* Layout: título grande em serifa, álbuns em grade de 2 colunas, barra inferior com botão + central, telas de ajustes em lista. */
+:root {
+  color-scheme: dark;
+  --bg: #0f1012;
+  --surface: #1a1b1e;
+  --tile: #25262b;
+  --fg: #f2f2f4;
+  --muted: #9a9ba3;
+  --line: #2c2d32;
+  --accent: #c08cff;
+  --accent-fg: #1a0a2e;
+  --accent-soft: #2a2037;
+  --danger: #ff6b6b;
+  --ok: #5fd39a;
+  --viewer-bg: #050506;
+  --viewer-fg: #f2f2f4;
+  --font-display: "Roboto Slab", Georgia, serif;
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg: #f6f5f8; --surface: #ffffff; --tile: #e7e5ec; --fg: #17161b; --muted: #6a6772; --line: #dcd9e3;
+    --accent: #7a3fd1; --accent-fg: #ffffff; --accent-soft: #e9ddfa; --danger: #c43a3a; --ok: #1f8a5a;
+  }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f6f5f8; --surface: #ffffff; --tile: #e7e5ec; --fg: #17161b; --muted: #6a6772; --line: #dcd9e3;
+  --accent: #7a3fd1; --accent-fg: #ffffff; --accent-soft: #e9ddfa; --danger: #c43a3a; --ok: #1f8a5a;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-bottom: 140px; -webkit-tap-highlight-color: transparent;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+img { max-width: 100%; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ic { display: block; flex: none; }
+.muted { color: var(--muted); }
+
+#head { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))) calc(-1 * max(16px, env(safe-area-inset-right, 0px))); padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); }
+.bar { display: flex; align-items: center; gap: 4px; min-height: 64px; }
+.bar h1 { flex: 1; min-width: 0; margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar h1.big { font-size: 2.3rem; letter-spacing: -0.01em; }
+.ibtn { position: relative; width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: transparent; border-radius: 50%; color: var(--muted); flex: none; }
+.ibtn:hover { background: var(--surface); color: var(--fg); }
+.ibtn .dot { position: absolute; top: 8px; right: 8px; width: 12px; height: 12px; border-radius: 50%; background: var(--danger); }
+#tools { padding-bottom: 8px; }
+.searchwrap { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 0 12px; color: var(--muted); }
+.searchwrap input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 11px 0; outline: none; color: var(--fg); }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-top: 8px; scrollbar-width: none; }
+.chip { flex: none; border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 14px; color: var(--muted); font-weight: 500; }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--fg); font-weight: 600; }
+
+main { padding-top: 8px; }
+.albums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 14px; margin-top: 8px; }
+.atile { border: 0; background: none; padding: 0; text-align: left; min-width: 0; }
+.acover { position: relative; aspect-ratio: 1; border-radius: 20px; overflow: hidden; background: var(--tile); display: grid; place-items: center; color: var(--muted); }
+.acover img, .acover video { width: 100%; height: 100%; object-fit: cover; display: block; max-width: none; }
+.acover .lockbadge { position: absolute; right: 10px; top: 10px; background: rgba(0,0,0,.6); color: #fff; border-radius: 50%; width: 30px; height: 30px; display: grid; place-items: center; }
+.aname { margin-top: 8px; font-family: var(--font-display); font-weight: 500; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acount { color: var(--muted); font-size: 0.8rem; }
+
+.day { margin-top: 20px; }
+.day h2 { font-family: var(--font-display); font-size: 1rem; font-weight: 500; margin: 0 0 8px; display: flex; gap: 8px; align-items: baseline; }
+.day h2 span { color: var(--muted); font-family: var(--font-body); font-weight: 400; font-size: 0.82rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 3px; }
+.cell { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--tile); border: 0; padding: 0; border-radius: 4px; display: block; width: 100%; min-width: 0; }
+.cell img, .cell video { width: 100%; height: 100%; object-fit: cover; display: block; max-width: none; }
+.cell[aria-selected="true"] { outline: 3px solid var(--accent); outline-offset: -3px; }
+.cell[aria-selected="true"] img, .cell[aria-selected="true"] video { transform: scale(0.9); }
+.badge { position: absolute; left: 6px; bottom: 6px; background: rgba(0,0,0,.62); color: #fff; font-size: 0.72rem; border-radius: 4px; padding: 1px 6px; }
+.starred { position: absolute; right: 6px; bottom: 5px; color: #ffd24a; filter: drop-shadow(0 1px 2px rgba(0,0,0,.7)); }
+.starred svg { fill: currentColor; }
+.check { position: absolute; left: 6px; top: 6px; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; background: rgba(0,0,0,.35); opacity: 0; display: grid; place-items: center; color: #fff; }
+.cell:hover .check, .cell:focus-visible .check, body.selecting .check { opacity: 1; }
+@media (hover: none) { .check { opacity: .85; } }
+.cell[aria-selected="true"] .check { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); opacity: 1; }
+.filetile { height: 100%; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; text-align: left; background: var(--surface); }
+.ext { font-family: var(--font-display); font-weight: 600; font-size: 1.15rem; color: var(--accent); letter-spacing: 0.04em; }
+.fname { font-size: 0.74rem; color: var(--muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; word-break: break-word; }
+
+.empty { margin: 48px auto 0; max-width: 420px; text-align: center; display: grid; gap: 10px; justify-items: center; }
+.empty h2 { font-family: var(--font-display); font-size: 1.25rem; margin: 0; text-wrap: balance; }
+.empty p { margin: 0; color: var(--muted); text-wrap: balance; }
+
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 16px; font-weight: 600; min-height: 44px; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.danger { color: var(--danger); }
+.btn.danger.solid { background: var(--danger); color: var(--bg); border-color: var(--danger); }
+.btn.block { width: 100%; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; }
+.card + .card, .card + .cols, .cols + .card { margin-top: 12px; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.mini { text-align: left; display: grid; gap: 10px; font-family: var(--font-display); font-size: 1.05rem; }
+.mini .n { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-family: var(--font-body); font-size: 1.05rem; }
+.alertcard { display: flex; gap: 12px; align-items: center; }
+.alertcard .bubble { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--danger); color: #fff; }
+.alertcard .bubble.ok { background: var(--ok); color: #06210f; }
+.alertcard h3 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 1.1rem; }
+.warnbox { margin-top: 12px; background: color-mix(in srgb, var(--danger) 16%, var(--bg)); border-radius: 10px; padding: 12px; text-align: center; }
+.btnrow { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.btnrow .btn { flex: 1 1 140px; }
+.rows { margin-top: 16px; display: grid; }
+.row { display: flex; align-items: center; gap: 16px; width: 100%; padding: 14px 4px; border: 0; background: none; text-align: left; font-size: 1rem; }
+.row .ic { color: var(--muted); }
+.row .grow { flex: 1; min-width: 0; }
+.row .sub { display: block; color: var(--muted); font-size: 0.82rem; }
+.row.static { cursor: default; }
+.section { margin-top: 20px; }
+.section h3 { margin: 0 0 6px; font-family: var(--font-display); font-weight: 500; font-size: 1rem; }
+.note { color: var(--muted); font-size: 0.85rem; margin: 8px 0 0; }
+.switch { flex: none; width: 50px; height: 30px; border-radius: 999px; border: 0; background: var(--tile); position: relative; padding: 0; }
+.switch i { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: var(--muted); transition: transform .15s, background .15s; }
+.switch[aria-checked="true"] { background: var(--accent-soft); }
+.switch[aria-checked="true"] i { transform: translateX(20px); background: var(--accent); }
+.seg { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.seg button { flex: 1 1 auto; border: 1px solid var(--line); background: transparent; border-radius: 10px; padding: 9px 12px; color: var(--muted); font-weight: 500; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--fg); font-weight: 600; }
+.seg button:disabled { opacity: .45; cursor: default; }
+.swatches { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+.swatch { width: 44px; height: 44px; border-radius: 50%; border: 3px solid transparent; padding: 0; display: grid; place-items: center; color: #000; }
+.swatch[aria-pressed="true"] { border-color: var(--fg); }
+.hint { display: flex; gap: 12px; align-items: center; background: var(--accent-soft); border-radius: 16px; padding: 12px 14px; margin-top: 8px; }
+.hint .grow { flex: 1; min-width: 0; }
+.hint b { font-family: var(--font-display); font-weight: 500; }
+.list { margin-top: 8px; display: grid; gap: 8px; }
+.li { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.prose p { margin: 0 0 12px; color: var(--fg); }
+.prose h3 { margin: 20px 0 6px; font-family: var(--font-display); font-weight: 500; }
+
+.bottombar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: var(--surface); border-top: 1px solid var(--line); display: flex; justify-content: space-around; align-items: center; height: calc(64px + env(safe-area-inset-bottom, 0px)); padding: 0 max(16px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(16px, env(safe-area-inset-left, 0px)); }
+.nb { width: 72px; height: 48px; border: 0; background: transparent; color: var(--muted); display: grid; place-items: center; border-radius: 12px; }
+.nb:hover { color: var(--fg); }
+.fab { position: absolute; left: 50%; top: -28px; transform: translateX(-50%); width: 64px; height: 64px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+
+.overlay { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.55); display: grid; align-items: end; justify-items: center; }
+.overlay.mid { align-items: center; padding: 16px; }
+.sheetcard { width: min(520px, 100%); background: var(--surface); border-radius: 22px 22px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 12px; }
+.dlgcard { width: min(420px, 100%); background: var(--surface); border-radius: 20px; padding: 20px; display: grid; gap: 12px; max-height: 90vh; overflow: auto; }
+.sheetcard h2, .dlgcard h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 1.2rem; }
+.dlgcard p { margin: 0; color: var(--muted); white-space: pre-line; }
+.field { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.lbl { font-size: 0.82rem; color: var(--muted); }
+.dlgbtns { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.choices { display: grid; gap: 8px; }
+.err { color: var(--danger); font-size: 0.85rem; min-height: 1em; }
+.srcs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.src { border: 1px solid var(--line); background: var(--bg); border-radius: 14px; padding: 14px 4px; display: grid; justify-items: center; gap: 6px; font-size: 0.8rem; color: var(--fg); }
+.src .ic { color: var(--accent); }
+#menuwrap { position: fixed; inset: 0; z-index: 55; }
+#menu { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); top: calc(env(safe-area-inset-top, 0px) + 58px); background: var(--surface); border: 1px solid var(--line); border-radius: 14px; min-width: 240px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+#menu button { display: flex; align-items: center; gap: 14px; width: 100%; padding: 13px 12px; border: 0; background: none; text-align: left; border-radius: 10px; }
+#menu button:hover { background: var(--tile); }
+#menu .ic { color: var(--muted); }
+
+#toast { position: fixed; left: 0; right: 0; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 70; display: flex; justify-content: center; padding: 0 16px; pointer-events: none; }
+#toast .msg { pointer-events: auto; background: var(--fg); color: var(--bg); border-radius: 12px; padding: 11px 14px; max-width: 520px; display: flex; gap: 14px; align-items: center; box-shadow: 0 6px 24px rgba(0,0,0,.3); }
+#toast button { background: none; border: 0; color: inherit; font-weight: 700; text-decoration: underline; padding: 0; }
+#drop { position: fixed; inset: 0; z-index: 65; background: color-mix(in srgb, var(--bg) 88%, transparent); display: grid; place-items: center; font-family: var(--font-display); font-size: 1.4rem; border: 3px dashed var(--accent); margin: 10px; border-radius: 16px; pointer-events: none; }
+#shade { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: grid; place-items: center; color: var(--accent); }
+
+.full { position: fixed; inset: 0; background: var(--bg); display: grid; place-items: center; overflow: auto; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+#pinmodal { z-index: 80; }
+#lock { z-index: 90; }
+.pin { width: min(340px, 100%); padding: 24px 16px; text-align: center; display: grid; gap: 10px; }
+.pin h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 1.4rem; }
+.pin p { margin: 0; }
+.pinlogo { width: 64px; height: 64px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; margin: 0 auto 6px; }
+.dots { display: flex; gap: 14px; justify-content: center; margin: 14px 0 4px; }
+.dots i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--muted); }
+.dots i.on { background: var(--accent); border-color: var(--accent); }
+.dots.bad i { border-color: var(--danger); }
+.pin .msg { min-height: 1.4em; color: var(--danger); font-size: 0.9rem; }
+.keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; justify-items: center; margin-top: 6px; }
+.key { width: 72px; height: 72px; border-radius: 50%; border: 0; background: var(--surface); font-family: var(--font-display); font-size: 1.6rem; display: grid; place-items: center; }
+.key:active { background: var(--tile); }
+.key.flat { background: none; font-family: var(--font-body); font-size: 0.9rem; color: var(--muted); }
+.calc { width: min(420px, 100%); height: 100%; max-height: 780px; display: grid; grid-template-rows: 1fr auto; padding: 16px; gap: 12px; }
+.cdisp { align-self: end; text-align: right; font-size: 3.6rem; font-weight: 400; word-break: break-all; padding: 8px 8px 0; line-height: 1.1; }
+.cdisp.small { font-size: 2.2rem; }
+.ckeys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.ck { height: 68px; border-radius: 50%; border: 0; background: var(--surface); font-size: 1.5rem; display: grid; place-items: center; }
+.ck.op { background: var(--accent-soft); color: var(--accent); }
+.ck.eq { background: var(--accent); color: var(--accent-fg); grid-row: span 2; height: auto; border-radius: 34px; }
+.ck.zero { grid-column: span 2; border-radius: 34px; }
+
+#viewer { position: fixed; inset: 0; z-index: 50; background: var(--viewer-bg); color: var(--viewer-fg); display: grid; grid-template-rows: auto 1fr auto; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+.vbar { display: flex; align-items: center; gap: 4px; padding: 6px 8px; }
+.vtitle { flex: 1; min-width: 0; font-family: var(--font-display); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 6px; }
+.vbar .ibtn { color: var(--viewer-fg); }
+.vbar .ibtn:hover { background: rgba(255,255,255,.12); }
+.vstage { min-height: 0; display: grid; place-items: center; padding: 0 56px; position: relative; }
+.vstage img, .vstage video { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.vstage .filecard { background: #1a1e23; border: 1px solid rgba(255,255,255,.18); border-radius: 14px; padding: 28px; text-align: center; display: grid; gap: 10px; justify-items: center; max-width: 340px; }
+.vstage .filecard .btn { background: transparent; color: var(--viewer-fg); }
+.vnav { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 64px; border: 0; background: transparent; color: var(--viewer-fg); display: grid; place-items: center; }
+.vnav.prev { left: 4px; } .vnav.next { right: 4px; }
+.vnav:disabled { opacity: .25; cursor: default; }
+.vmeta { padding: 10px 16px 14px; font-size: 0.82rem; color: #aab3bd; text-align: center; }
+
+@media (prefers-reduced-motion: no-preference) { .cell img, .cell video { transition: transform .15s; } .dots.bad { animation: shake .25s; } }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@media (max-width: 480px) { .vstage { padding: 0 6px; } .vnav { background: rgba(0,0,0,.4); border-radius: 10px; height: 48px; width: 36px; } }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header id="head">
+    <div class="bar" id="bar"></div>
+    <div id="tools" hidden>
+      <div class="searchwrap"><span id="searchic"></span><input id="q" type="search" placeholder="Buscar pelo nome" aria-label="Buscar pelo nome"></div>
+      <div class="chips" id="chips" role="group" aria-label="Filtros">
+        <button class="chip" type="button" data-f="all" aria-pressed="true">Tudo</button>
+        <button class="chip" type="button" data-f="image" aria-pressed="false">Fotos</button>
+        <button class="chip" type="button" data-f="video" aria-pressed="false">Vídeos</button>
+        <button class="chip" type="button" data-f="file" aria-pressed="false">Arquivos</button>
+        <button class="chip" type="button" data-f="fav" aria-pressed="false">Favoritos</button>
+      </div>
+    </div>
+  </header>
+  <main id="main"></main>
+</div>
+
+<nav class="bottombar" id="bottom" hidden></nav>
+
+<div id="viewer" hidden role="dialog" aria-modal="true" aria-label="Visualizador">
+  <div class="vbar" id="vbar"></div>
+  <div class="vstage" id="vstage">
+    <button class="vnav prev" id="vprev" type="button" data-act="v-prev" aria-label="Anterior"></button>
+    <button class="vnav next" id="vnext" type="button" data-act="v-next" aria-label="Próximo"></button>
+  </div>
+  <div class="vmeta" id="vmeta"></div>
+</div>
+
+<div id="menuwrap" hidden><div id="menu" role="menu"></div></div>
+<div class="overlay" id="sheet" hidden><div class="sheetcard" id="sheetcard"></div></div>
+<div class="overlay mid" id="dialog" hidden><div class="dlgcard" id="dlgcard" role="dialog" aria-modal="true"></div></div>
+<div id="toast" hidden></div>
+<div id="drop" hidden>Solte para enviar</div>
+<div class="full" id="pinmodal" hidden></div>
+<div class="full" id="lock" hidden></div>
+<div id="shade" hidden></div>
+
+<input id="fGallery" type="file" multiple hidden accept="image/*,video/*">
+<input id="fPhoto" type="file" hidden accept="image/*" capture="environment">
+<input id="fVideo" type="file" hidden accept="video/*" capture="environment">
+<input id="fFiles" type="file" multiple hidden>
+<input id="fRestore" type="file" hidden accept=".zip,application/zip">
+
+<script>
+/* Photx: tudo fica no navegador (IndexedDB e localStorage). Nenhum arquivo sai do aparelho. */
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ---------- ícones ---------- */
+const IC = {
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  grid: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+  cloud: '<path d="M7 18h10.5a4 4 0 0 0 .5-7.97 5.5 5.5 0 0 0-10.7-1.2A4.5 4.5 0 0 0 7 18z"/>',
+  folderPlus: '<path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M12 10.5v5M9.5 13h5"/>',
+  back: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  chev: '<path d="M9 6l6 6-6 6"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  trash: '<path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12M10 11v5M14 11v5"/>',
+  shield: '<path d="M12 4l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V7z"/><path d="M12 9v4M12 15.5v.5"/>',
+  user: '<circle cx="12" cy="9" r="3.5"/><path d="M5 20c1-4 4-5.5 7-5.5s6 1.5 7 5.5"/>',
+  keypad: '<path d="M6 6h.01M12 6h.01M18 6h.01M6 12h.01M12 12h.01M18 12h.01M6 18h.01M12 18h.01M18 18h.01" stroke-width="3"/>',
+  lockstyle: '<rect x="6" y="3" width="12" height="18" rx="2"/><path d="M10 13h4v3h-4zM11 13v-1a1 1 0 0 1 2 0v1"/>',
+  calc: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01" stroke-width="2.6"/>',
+  fake: '<rect x="3" y="8" width="8" height="8" rx="1.5"/><rect x="13" y="8" width="8" height="8" rx="1.5" fill="currentColor"/>',
+  key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3"/>',
+  brush: '<path d="M5 4h14v5H5zM12 9v4M10 13h4v7h-4z"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17v.01"/>',
+  more: '<path d="M12 5h.01M12 12h.01M12 19h.01" stroke-width="3"/>',
+  star: '<path d="M12 4l2.4 5 5.4.7-4 3.8 1 5.4L12 16.2 7.2 18.9l1-5.4-4-3.8 5.4-.7z"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  download: '<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',
+  move: '<path d="M4 12h13M13 7l5 5-5 5"/>',
+  image: '<rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M5 17l4.5-4.5 3 3L15 13l4 4"/>',
+  camera: '<path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>',
+  file: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>',
+  search: '<circle cx="11" cy="11" r="6"/><path d="M16 16l4 4"/>',
+  restore: '<path d="M5 12a7 7 0 1 0 2.2-5.1M5 4v4h4"/>',
+  edit: '<path d="M5 19l1-4L16 5l3 3L9 18z"/>',
+  upload: '<path d="M12 16V5M7 9l5-5 5 5M5 20h14"/>',
+  warn: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.01"/>'
+};
+const ic = (n, s = 24) => `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
+
+/* ---------- utilidades ---------- */
+const MAX_BYTES = 200 * 1024 * 1024;
+const fmtBytes = n => n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + ' KB' : n < 1073741824 ? (n / 1048576).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' MB' : (n / 1073741824).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' GB';
+const extOf = name => ((/\.([a-z0-9]+)$/i.exec(name || '') || [])[1] || '').toLowerCase();
+const when = it => it.takenAt || it.addedAt || 0;
+const dayFmt = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+const timeFmt = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' });
+const dayLabel = ts => {
+  const d = new Date(ts), t = new Date(), y = new Date(); y.setDate(t.getDate() - 1);
+  if (d.toDateString() === t.toDateString()) return 'Hoje';
+  if (d.toDateString() === y.toDateString()) return 'Ontem';
+  return dayFmt.format(d);
+};
+const newId = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const IMG_EXT = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif', 'bmp'];
+const VID_EXT = ['mp4', 'webm', 'mov', 'm4v', 'mkv', '3gp'];
+function kindFor(f) {
+  const e = extOf(f.name), m = f.type || '';
+  if (e === 'heic' || e === 'heif') return 'file';
+  if (m.startsWith('image/') || IMG_EXT.includes(e)) return 'image';
+  if (m.startsWith('video/') || VID_EXT.includes(e)) return 'video';
+  return 'file';
+}
+
+/*ZIPSTART*/
+const CRC_TABLE = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(buf) { let c = 0xFFFFFFFF; for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+async function buildZip(entries) {
+  if (entries.length > 65000) throw new Error('muitos arquivos para um único backup');
+  const enc = new TextEncoder(), parts = [], central = [];
+  const now = new Date(), dtime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+  const ddate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  let offset = 0, cdSize = 0;
+  for (const e of entries) {
+    const name = enc.encode(e.name), size = e.blob.size;
+    if (size > 0xFFFFFFFF || offset > 0xFFFFFFFF) throw new Error('backup grande demais');
+    const crc = crc32(new Uint8Array(await e.blob.arrayBuffer()));
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, dtime, true); lh.setUint16(12, ddate, true); lh.setUint32(14, crc, true);
+    lh.setUint32(18, size, true); lh.setUint32(22, size, true); lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+    parts.push(lh.buffer, name, e.blob);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+    ch.setUint16(12, dtime, true); ch.setUint16(14, ddate, true); ch.setUint32(16, crc, true);
+    ch.setUint32(20, size, true); ch.setUint32(24, size, true); ch.setUint16(28, name.length, true);
+    ch.setUint16(30, 0, true); ch.setUint16(32, 0, true); ch.setUint16(34, 0, true); ch.setUint16(36, 0, true); ch.setUint32(38, 0, true); ch.setUint32(42, offset, true);
+    central.push(ch.buffer, name);
+    cdSize += 46 + name.length; offset += 30 + name.length + size;
+  }
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, entries.length, true); end.setUint16(10, entries.length, true);
+  end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, end.buffer], { type: 'application/zip' });
+}
+async function readZipEntries(file) {
+  const tailSize = Math.min(file.size, 66000);
+  const tail = new DataView(await file.slice(file.size - tailSize).arrayBuffer());
+  let eocd = -1;
+  for (let i = tailSize - 22; i >= 0; i--) if (tail.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error('arquivo zip inválido');
+  const count = tail.getUint16(eocd + 10, true), cdSize = tail.getUint32(eocd + 12, true), cdOff = tail.getUint32(eocd + 16, true);
+  const cd = new DataView(await file.slice(cdOff, cdOff + cdSize).arrayBuffer());
+  const out = []; let p = 0;
+  for (let n = 0; n < count; n++) {
+    if (cd.getUint32(p, true) !== 0x02014b50) throw new Error('arquivo zip inválido');
+    const method = cd.getUint16(p + 10, true), csize = cd.getUint32(p + 20, true), nl = cd.getUint16(p + 28, true), el = cd.getUint16(p + 30, true), cl = cd.getUint16(p + 32, true), lo = cd.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(new Uint8Array(cd.buffer, p + 46, nl));
+    out.push({ name, method, csize, lo }); p += 46 + nl + el + cl;
+  }
+  return out;
+}
+async function zipEntryBlob(file, e, type) {
+  const lh = new DataView(await file.slice(e.lo, e.lo + 30).arrayBuffer());
+  const start = e.lo + 30 + lh.getUint16(26, true) + lh.getUint16(28, true);
+  return file.slice(start, start + e.csize, type || '');
+}
+function evalExpr(src) {
+  const s = src.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-'); let p = 0;
+  const number = () => { const m = /^(\d+\.?\d*|\.\d+)/.exec(s.slice(p)); if (!m) throw new Error('x'); p += m[0].length; return parseFloat(m[0]); };
+  const factor = () => { if (s[p] === '-') { p++; return -factor(); } return number(); };
+  const term = () => { let v = factor(); while (s[p] === '*' || s[p] === '/') { const o = s[p++], r = factor(); v = o === '*' ? v * r : v / r; } return v; };
+  const expr = () => { let v = term(); while (s[p] === '+' || s[p] === '-') { const o = s[p++], r = term(); v = o === '+' ? v + r : v - r; } return v; };
+  const v = expr(); if (p !== s.length) throw new Error('x'); return v;
+}
+/*ZIPEND*/
+
+/* ---------- configuração e segurança ---------- */
+const CFG_KEY = 'photx.cfg.v1';
+const cfgDefaults = () => ({ theme: 'dark', accent: 'lilac', lockEnabled: false, pinHash: '', pinSalt: '', pinLen: 4, fakeHash: '', fakeSalt: '', calc: false, shuffle: false, autolock: 30, alerts: [], hintDismissed: false });
+const cfg = (() => { const d = cfgDefaults(); try { Object.assign(d, JSON.parse(localStorage.getItem(CFG_KEY) || '{}')); } catch (e) {} return d; })();
+const saveCfg = () => { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (e) {} };
+const hex = buf => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+const newSalt = () => { const a = new Uint8Array(16); crypto.getRandomValues(a); return hex(a); };
+async function hashSecret(secret, saltHex) {
+  if (window.crypto && crypto.subtle) {
+    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), 'PBKDF2', false, ['deriveBits']);
+    const salt = new Uint8Array(saltHex.match(/../g).map(h => parseInt(h, 16)));
+    return hex(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' }, key, 256));
+  }
+  let h = 2166136261; (saltHex + secret).split('').forEach(c => { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); });
+  return 'f' + (h >>> 0).toString(16);
+}
+async function checkPin(p) {
+  let r = null;
+  if (cfg.pinHash && (await hashSecret(p, cfg.pinSalt)) === cfg.pinHash) r = 'real';
+  if (!r && cfg.fakeHash && (await hashSecret(p, cfg.fakeSalt)) === cfg.fakeHash) r = 'fake';
+  return r;
+}
+const logAlert = msg => { cfg.alerts.unshift({ t: Date.now(), msg }); cfg.alerts = cfg.alerts.slice(0, 50); saveCfg(); };
+
+/* ---------- aparência ---------- */
+const PAL = {
+  lilac: null,
+  teal: { dark: ['#4cc6a6', '#07241d', '#17332d'], light: ['#0b7a64', '#ffffff', '#d8efe9'] },
+  blue: { dark: ['#6ea8ff', '#08203f', '#1a2a44'], light: ['#2a63d6', '#ffffff', '#dbe6fb'] },
+  pink: { dark: ['#ff7ab8', '#3a0b22', '#3a2030'], light: ['#c2337a', '#ffffff', '#fadcea'] },
+  orange: { dark: ['#ffa24c', '#3a1d02', '#3a2a18'], light: ['#b85c0a', '#ffffff', '#fae4cf'] },
+  green: { dark: ['#7ddc6b', '#0d2a08', '#1e3319'], light: ['#2f8a1f', '#ffffff', '#dff2d9'] }
+};
+const ACCENTS = { lilac: ['Lilás', '#c08cff'], teal: ['Verde-água', '#4cc6a6'], blue: ['Azul', '#6ea8ff'], pink: ['Rosa', '#ff7ab8'], orange: ['Laranja', '#ffa24c'], green: ['Verde', '#7ddc6b'] };
+const effTheme = () => cfg.theme === 'system' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : cfg.theme;
+function applyTheme() {
+  const r = document.documentElement;
+  if (cfg.theme === 'system') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', cfg.theme);
+  const p = PAL[cfg.accent], t = effTheme();
+  ['--accent', '--accent-fg', '--accent-soft'].forEach((k, i) => { if (p) r.style.setProperty(k, p[t][i]); else r.style.removeProperty(k); });
+  const m = $('meta[name=theme-color]'); if (m) m.setAttribute('content', getComputedStyle(r).getPropertyValue('--bg').trim() || '#0f1012');
+}
+try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => { if (cfg.theme === 'system') applyTheme(); }); } catch (e) {}
+
+/* ---------- banco de dados ---------- */
+let idb = null, mode = 'real', locked = true;
+let items = [], albums = [];
+const unlockedAlbums = new Set();
+function openDB(name) {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(name, 2);
+    r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('items')) d.createObjectStore('items', { keyPath: 'id' }); if (!d.objectStoreNames.contains('albums')) d.createObjectStore('albums', { keyPath: 'id' }); };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function tx(store, m, fn) {
+  return new Promise((res, rej) => {
+    const t = idb.transaction(store, m), out = fn(t.objectStore(store));
+    t.oncomplete = () => res(out && out.result);
+    t.onerror = t.onabort = () => rej(t.error);
+  });
+}
+const dbAll = store => tx(store, 'readonly', s => s.getAll()).then(r => r || []);
+const dbPut = (store, rec) => tx(store, 'readwrite', s => s.put(rec));
+const dbDel = (store, id) => tx(store, 'readwrite', s => s.delete(id));
+const saveItem = it => { const rec = Object.assign({}, it); delete rec._url; return dbPut('items', rec); };
+const srcOf = it => { if (!it._url) it._url = URL.createObjectURL(it.blob); return it._url; };
+
+/* ---------- estado ---------- */
+let route = { view: 'albums', albumId: null, viewer: null };
+let filter = 'all', query = '', flat = [], suppressLock = false, pendingAlbum = 'main';
+const selected = new Set();
+const byId = id => items.find(i => i.id === id) || null;
+const albumById = id => albums.find(a => a.id === id) || null;
+const albumLocked = a => !!(a && a.passHash && !unlockedAlbums.has(a.id));
+const sortedAlbums = () => albums.slice().sort((a, b) => (a.main ? -1 : b.main ? 1 : a.createdAt - b.createdAt));
+const unbacked = () => mode === 'real' ? items.filter(i => !i.deletedAt && !i.backedAt).length : 0;
+
+/* ---------- navegação ---------- */
+function push(r) {
+  const view = r.view || route.view;
+  if (view !== route.view || r.albumId !== undefined && r.albumId !== route.albumId) { query = ''; $('#q').value = ''; filter = 'all'; selected.clear(); }
+  route = Object.assign({}, route, { viewer: null }, r);
+  history.pushState(route, ''); window.scrollTo(0, 0); paint();
+}
+const go = (view, extra) => push(Object.assign({ view, albumId: null }, extra || {}));
+window.addEventListener('popstate', e => { route = e.state || { view: 'albums', albumId: null, viewer: null }; selected.clear(); paint(); });
+
+/* ---------- diálogos, toast, menu ---------- */
+let toastTimer;
+function toast(text, label, fn, sticky) {
+  const el = $('#toast'); clearTimeout(toastTimer);
+  el.innerHTML = `<div class="msg"><span>${esc(text)}</span>${label ? '<button type="button" id="toastbtn">' + esc(label) + '</button>' : ''}</div>`;
+  el.hidden = false;
+  if (label) $('#toastbtn').onclick = () => { el.hidden = true; fn(); };
+  if (!sticky) toastTimer = setTimeout(() => { el.hidden = true; }, label ? 6500 : 3500);
+}
+function dialog(o) {
+  return new Promise(res => {
+    const wrap = $('#dialog'), card = $('#dlgcard');
+    let h = `<h2>${esc(o.title)}</h2>`;
+    if (o.text) h += `<p>${esc(o.text)}</p>`;
+    if (o.input) h += `<input id="dlgin" class="field" type="${o.input.type || 'text'}" placeholder="${esc(o.input.placeholder || '')}" value="${esc(o.input.value || '')}" autocomplete="off">`;
+    if (o.input2) h += `<input id="dlgin2" class="field" type="${o.input2.type || 'text'}" placeholder="${esc(o.input2.placeholder || '')}" autocomplete="off">`;
+    if (o.choices) h += '<div class="choices">' + o.choices.map((c, i) => `<button type="button" class="btn ${c.danger ? 'danger' : ''}" data-ch="${i}">${esc(c.label)}</button>`).join('') + '</div>';
+    h += '<div class="err" id="dlgerr"></div><div class="dlgbtns">' + (o.cancel === false ? '' : `<button type="button" class="btn" id="dlgno">${esc(o.cancel || 'Cancelar')}</button>`) + (o.ok ? `<button type="button" class="btn ${o.danger ? 'danger solid' : 'primary'}" id="dlgok">${esc(o.ok)}</button>` : '') + '</div>';
+    card.innerHTML = h; wrap.hidden = false;
+    const in1 = $('#dlgin'); if (in1) setTimeout(() => in1.focus(), 60);
+    const done = v => { wrap.hidden = true; card.innerHTML = ''; document.removeEventListener('keydown', onKey); res(v); };
+    const submit = async () => {
+      const v = { value: in1 ? in1.value : '', value2: $('#dlgin2') ? $('#dlgin2').value : '' };
+      if (o.validate) { const err = await o.validate(v); if (err) { $('#dlgerr').textContent = err; return; } }
+      done(v);
+    };
+    const onKey = e => { if (e.key === 'Escape') done(null); else if (e.key === 'Enter' && o.ok && e.target.tagName === 'INPUT') submit(); };
+    document.addEventListener('keydown', onKey);
+    card.onclick = e => {
+      const ch = e.target.closest('[data-ch]');
+      if (ch) return done({ choice: +ch.dataset.ch });
+      if (e.target.closest('#dlgno')) return done(null);
+      if (e.target.closest('#dlgok')) submit();
+    };
+    wrap.onclick = e => { if (e.target === wrap && o.cancel !== false) done(null); };
+  });
+}
+function showMenu(list) {
+  $('#menu').innerHTML = list.map(m => `<button type="button" role="menuitem" data-act="${m.act}">${ic(m.icon)}<span>${esc(m.label)}</span></button>`).join('');
+  $('#menuwrap').hidden = false;
+}
+const hideMenu = () => { $('#menuwrap').hidden = true; };
+$('#menuwrap').addEventListener('click', e => { if (e.target.id === 'menuwrap' || e.target.closest('[data-act]')) hideMenu(); });
+
+/* ---------- teclado de PIN ---------- */
+function pinScreen(el, o) {
+  let val = '', busy = false;
+  const digits = o.shuffle ? shuffle(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']) : ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+  const grid = digits.slice(0, 9), last = digits[9];
+  el.hidden = false;
+  const draw = (msg, bad) => {
+    const dots = Array.from({ length: o.len }, (_, i) => `<i class="${i < val.length ? 'on' : ''}"></i>`).join('');
+    el.innerHTML = `<div class="pin">${o.brand ? `<div class="pinlogo">${ic('lock', 32)}</div>` : ''}<h2>${esc(o.title)}</h2><p class="muted">${esc(o.sub || '')}</p>
+      <div class="dots ${bad ? 'bad' : ''}" role="img" aria-label="${val.length} de ${o.len} dígitos">${dots}</div><div class="msg" role="alert">${esc(msg || '')}</div>
+      <div class="keys">${grid.map(d => `<button type="button" class="key" data-k="${d}">${d}</button>`).join('')}
+      ${o.cancel ? '<button type="button" class="key flat" data-k="cancel">Cancelar</button>' : '<span></span>'}
+      <button type="button" class="key" data-k="${last}">${last}</button>
+      <button type="button" class="key flat" data-k="del" aria-label="Apagar">${ic('back', 22)}</button></div></div>`;
+  };
+  const close = () => { el.hidden = true; el.innerHTML = ''; el.onclick = null; document.removeEventListener('keydown', onKey); };
+  const press = async k => {
+    if (busy) return;
+    if (k === 'cancel') { close(); if (o.onCancel) o.onCancel(); return; }
+    if (k === 'del') { val = val.slice(0, -1); draw(); return; }
+    if (!/^\d$/.test(k) || val.length >= o.len) return;
+    val += k; draw();
+    if (val.length === o.len) {
+      busy = true; const pin = val; const err = await o.validate(pin); busy = false;
+      if (err) { val = ''; draw(err, true); if (navigator.vibrate) navigator.vibrate(120); return; }
+      close(); if (o.onOk) o.onOk(pin);
+    }
+  };
+  const onKey = e => { if (el.hidden) return; if (/^\d$/.test(e.key)) press(e.key); else if (e.key === 'Backspace') press('del'); else if (e.key === 'Escape' && o.cancel) press('cancel'); };
+  document.addEventListener('keydown', onKey);
+  el.onclick = e => { const b = e.target.closest('[data-k]'); if (b) press(b.dataset.k); };
+  draw();
+}
+const askPin = o => new Promise(res => pinScreen($('#pinmodal'), Object.assign({ shuffle: cfg.shuffle, cancel: true }, o, { onOk: p => res(p), onCancel: () => res(null) })));
+async function createPin(o) {
+  const len = o.len || cfg.pinLen;
+  const p1 = await askPin({ title: o.title || 'Criar PIN', sub: `Escolha ${len} dígitos`, len, validate: o.validate || (async () => null) });
+  if (p1 == null) return null;
+  return askPin({ title: 'Confirmar PIN', sub: 'Digite o PIN de novo', len, validate: async p => p === p1 ? null : 'Os PINs não são iguais' });
+}
+const verifyCurrentPin = () => askPin({ title: 'PIN atual', sub: 'Confirme que é você', len: cfg.pinLen, validate: async p => (await checkPin(p)) === 'real' ? null : 'PIN incorreto' });
+
+/* ---------- bloqueio e calculadora ---------- */
+let fails = 0, cool = 0;
+async function tryUnlock(p, silent) {
+  const now = Date.now();
+  if (!silent && now < cool) return `Aguarde ${Math.ceil((cool - now) / 1000)} s`;
+  const r = await checkPin(p);
+  if (!r) { if (!silent) { fails++; logAlert('PIN incorreto na tela de bloqueio'); if (fails >= 5) cool = Date.now() + 30000 * (fails - 4); } return 'PIN incorreto'; }
+  fails = 0; await openVault(r); return null;
+}
+function showLock() {
+  locked = true;
+  if (cfg.calc) return showCalc();
+  pinScreen($('#lock'), { title: 'Photx', sub: 'Digite seu PIN', len: cfg.pinLen, shuffle: cfg.shuffle, brand: true, validate: p => tryUnlock(p, false) });
+}
+function showCalc() {
+  const el = $('#lock'); el.hidden = false; let ce = '';
+  const keys = ['C', '⌫', '÷', '×', '7', '8', '9', '−', '4', '5', '6', '+', '1', '2', '3', '=', '0', '.'];
+  el.innerHTML = `<div class="calc"><div class="cdisp" id="cdisp" aria-live="polite">0</div><div class="ckeys">${keys.map(k => `<button type="button" class="ck ${/[÷×−+]/.test(k) ? 'op' : ''} ${k === '0' ? 'zero' : ''} ${k === '=' ? 'eq' : ''}" data-k="${k}">${k}</button>`).join('')}</div></div>`;
+  const upd = () => { const d = $('#cdisp'); d.textContent = (ce || '0').replace(/\./g, ','); d.classList.toggle('small', ce.length > 9); };
+  el.onclick = async e => {
+    const b = e.target.closest('[data-k]'); if (!b) return; const k = b.dataset.k;
+    if (ce === 'Erro') ce = '';
+    if (k === 'C') ce = '';
+    else if (k === '⌫') ce = ce.slice(0, -1);
+    else if (k === '=') {
+      if (/^\d+$/.test(ce) && ce.length === cfg.pinLen) { const err = await tryUnlock(ce, true); if (!err) { el.onclick = null; return; } }
+      try { const v = evalExpr(ce || '0'); ce = isFinite(v) ? String(parseFloat(v.toFixed(10))) : 'Erro'; } catch (x) { ce = 'Erro'; }
+    } else if (/[÷×−+]/.test(k)) {
+      if (!ce) { if (k === '−') ce = '−'; } else if (/[÷×−+]$/.test(ce)) ce = ce.slice(0, -1) + k; else ce += k;
+    } else if (k === '.') { if (!/\.\d*$/.test(ce)) ce += ce === '' || /[÷×−+]$/.test(ce) ? '0.' : '.'; }
+    else if (ce.length < 24) ce += k;
+    upd();
+  };
+  upd();
+}
+function hideLock() { const el = $('#lock'); el.hidden = true; el.innerHTML = ''; el.onclick = null; }
+function lockNow() {
+  items.forEach(i => { if (i._url) URL.revokeObjectURL(i._url); });
+  items = []; albums = []; selected.clear(); unlockedAlbums.clear();
+  try { if (idb) idb.close(); } catch (e) {} idb = null;
+  ['#main', '#bar', '#bottom', '#vbar', '#vstage .media'].forEach(s => { const n = $(s); if (n) n.innerHTML = ''; });
+  $$('#vstage .media').forEach(n => n.remove());
+  $('#viewer').hidden = true; $('#tools').hidden = true; $('#bottom').hidden = true; $('#sheet').hidden = true; $('#dialog').hidden = true; $('#pinmodal').hidden = true; hideMenu();
+  document.body.style.overflow = '';
+  route = { view: 'albums', albumId: null, viewer: null }; history.replaceState(route, '');
+  showLock();
+}
+document.addEventListener('visibilitychange', () => {
+  const on = !!(cfg.lockEnabled && cfg.pinHash && !locked);
+  if (document.hidden) { hiddenAt = Date.now(); $('#shade').innerHTML = ic('lock', 56); $('#shade').hidden = !on; return; }
+  $('#shade').hidden = true;
+  if (suppressLock) { suppressLock = false; return; }
+  if (on && hiddenAt && Date.now() - hiddenAt >= cfg.autolock * 1000) lockNow();
+});
+let hiddenAt = 0;
+
+/* ---------- abrir cofre ---------- */
+async function openVault(m) {
+  mode = m;
+  if (idb) { try { idb.close(); } catch (e) {} }
+  idb = await openDB(m === 'fake' ? 'photx-fake' : 'photx');
+  albums = await dbAll('albums');
+  if (!albums.some(a => a.id === 'main')) { const a = { id: 'main', name: 'Álbum principal', createdAt: 0, main: true }; await dbPut('albums', a); albums.push(a); }
+  items = await dbAll('items');
+  const cut = Date.now() - 30 * 864e5;
+  for (const g of items.filter(i => i.deletedAt && i.deletedAt < cut)) await dbDel('items', g.id);
+  items = items.filter(i => !(i.deletedAt && i.deletedAt < cut));
+  items.forEach(i => { if (!i.albumId) i.albumId = 'main'; });
+  locked = false; unlockedAlbums.clear(); selected.clear(); filter = 'all'; query = ''; $('#q').value = '';
+  route = { view: 'albums', albumId: null, viewer: null }; history.replaceState(route, '');
+  hideLock(); paint();
+}
+
+/* ---------- pintura ---------- */
+function setBar(o) {
+  let h = '';
+  if (o.back) h += `<button class="ibtn" data-act="back" aria-label="Voltar">${ic('back')}</button>`;
+  h += `<h1 class="${o.big ? 'big' : ''}">${esc(o.title)}</h1>`;
+  (o.actions || []).forEach(a => { h += `<button class="ibtn" data-act="${a.id}" aria-label="${esc(a.label)}">${ic(a.icon)}${a.dot ? '<i class="dot"></i>' : ''}</button>`; });
+  $('#bar').innerHTML = h;
+}
+function paint() {
+  if (locked) return;
+  const v = route.view;
+  document.body.classList.toggle('selecting', selected.size > 0);
+  $('#bottom').hidden = !((v === 'albums' || v === 'album' || v === 'all') && selected.size === 0);
+  $('#tools').hidden = !(v === 'album' || v === 'all');
+  const views = { albums: viewAlbums, album: viewAlbum, all: viewAll, settings: viewSettings, trash: viewTrash, alerts: viewAlerts, backup: viewBackup, account: viewAccount, lockset: viewLockset, lockstyle: viewLockstyle, calc: viewCalc, fake: viewFake, albumpass: viewAlbumpass, appearance: viewAppearance, help: viewHelp };
+  (views[v] || viewAlbums)();
+  paintViewer();
+}
+function coverHtml(a) {
+  if (albumLocked(a)) return `<div class="acover">${ic('lock', 44)}</div>`;
+  const list = items.filter(i => !i.deletedAt && i.albumId === a.id).sort((x, y) => when(y) - when(x));
+  const c = list.find(i => i.kind === 'image') || list.find(i => i.kind === 'video');
+  const inner = !c ? ic('image', 44) : c.kind === 'image' ? `<img src="${srcOf(c)}" alt="" loading="lazy" decoding="async">` : `<video src="${srcOf(c)}#t=0.1" preload="metadata" muted playsinline></video>`;
+  return `<div class="acover">${inner}${a.passHash ? `<span class="lockbadge">${ic('lock', 16)}</span>` : ''}</div>`;
+}
+function viewAlbums() {
+  setBar({ title: 'Álbuns', big: true, actions: [{ id: 'cloud', icon: 'cloud', label: 'Backup', dot: unbacked() > 0 }, { id: 'newmenu', icon: 'folderPlus', label: 'Novo álbum' }] });
+  let h = '';
+  if (mode === 'real' && !cfg.pinHash && !cfg.hintDismissed) h += `<div class="hint"><div class="grow"><b>Proteja seu cofre</b><div class="muted">Crie um PIN para travar o Photx.</div></div><button class="btn primary" data-act="hint-pin">Criar PIN</button><button class="ibtn" data-act="hint-dismiss" aria-label="Dispensar">${ic('close', 20)}</button></div>`;
+  h += '<div class="albums">' + sortedAlbums().map(a => {
+    const n = items.filter(i => !i.deletedAt && i.albumId === a.id).length;
+    return `<button type="button" class="atile" data-act="open-album" data-id="${esc(a.id)}">${coverHtml(a)}<div class="aname">${esc(a.name)}</div><div class="acount">${albumLocked(a) ? 'Protegido por senha' : n + (n === 1 ? ' item' : ' itens')}</div></button>`;
+  }).join('') + '</div>';
+  $('#main').innerHTML = h;
+}
+function listFor(view) {
+  const ok = new Set(albums.filter(a => !albumLocked(a)).map(a => a.id));
+  return items.filter(i => !i.deletedAt && (view === 'album' ? i.albumId === route.albumId : ok.has(i.albumId)));
+}
+function filtered(list) {
+  const q = query.trim().toLowerCase();
+  return list.filter(it => {
+    if (filter === 'fav' && !it.fav) return false;
+    if (['image', 'video', 'file'].includes(filter) && it.kind !== filter) return false;
+    if (q && !String(it.name || '').toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a, b) => when(b) - when(a));
+}
+function cellHtml(it, extra) {
+  const src = srcOf(it), sel = selected.has(it.id); let inner;
+  if (it.kind === 'image') inner = `<img src="${src}" alt="${esc(it.name)}" loading="lazy" decoding="async">`;
+  else if (it.kind === 'video') inner = `<video src="${src}#t=0.1" preload="metadata" muted playsinline></video><span class="badge">▶ Vídeo</span>`;
+  else inner = `<div class="filetile"><div class="ext">${esc((extOf(it.name) || 'arq').toUpperCase())}</div><div class="fname">${esc(it.name)}</div></div>`;
+  return `<button type="button" class="cell" data-id="${esc(it.id)}" aria-selected="${sel}" aria-label="${esc(it.name)}">${inner}<span class="check" data-check="1">${sel ? ic('check', 14) : ''}</span>${it.fav ? `<span class="starred">${ic('star', 14)}</span>` : ''}${extra || ''}</button>`;
+}
+function groupsHtml(list) {
+  const groups = []; let last = null;
+  list.forEach(it => { const key = new Date(when(it)).toDateString(); if (!last || last.key !== key) { last = { key, ts: when(it), items: [] }; groups.push(last); } last.items.push(it); });
+  return groups.map(g => `<section class="day"><h2>${esc(dayLabel(g.ts))}<span>${g.items.length} ${g.items.length === 1 ? 'item' : 'itens'}</span></h2><div class="grid">${g.items.map(i => cellHtml(i)).join('')}</div></section>`).join('');
+}
+function viewList(title, isAlbum) {
+  const base = listFor(route.view); flat = filtered(base);
+  if (selected.size) setBar({ title: `${selected.size} ${selected.size === 1 ? 'selecionado' : 'selecionados'}`, actions: [{ id: 'sel-fav', icon: 'star', label: 'Favoritar' }, { id: 'sel-move', icon: 'move', label: 'Mover para outro álbum' }, { id: 'sel-del', icon: 'trash', label: 'Mover para a lixeira' }, { id: 'sel-cancel', icon: 'close', label: 'Cancelar seleção' }] });
+  else setBar({ title, back: true, actions: isAlbum ? [{ id: 'albummenu', icon: 'more', label: 'Mais opções' }] : [] });
+  $$('#chips .chip').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.f === filter)));
+  let h;
+  if (!base.length) h = `<div class="empty"><h2>${isAlbum ? 'Este álbum está vazio' : 'Nada por aqui ainda'}</h2><p>Toque no botão + para adicionar fotos, vídeos e arquivos.</p></div>`;
+  else if (!flat.length) h = '<div class="empty"><h2>Nada encontrado</h2><p>Troque o filtro ou a busca para ver outros itens.</p></div>';
+  else h = groupsHtml(flat);
+  $('#main').innerHTML = h;
+}
+function viewAlbum() {
+  const a = albumById(route.albumId);
+  if (!a || albumLocked(a)) { route = { view: 'albums', albumId: null, viewer: null }; history.replaceState(route, ''); return viewAlbums(); }
+  viewList(a.name, true);
+}
+const viewAll = () => viewList('Todos os itens', false);
+
+/* ---------- telas de ajustes ---------- */
+const sw = (act, on, label) => `<button type="button" class="switch" role="switch" aria-checked="${on}" aria-label="${esc(label)}" data-act="${act}"><i></i></button>`;
+function viewSettings() {
+  setBar({ title: 'Meu cofre', back: true });
+  const n = unbacked(), live = items.filter(i => !i.deletedAt).length;
+  let backup;
+  if (n > 0) backup = `<div class="alertcard"><div class="bubble">${ic('warn', 22)}</div><div><h3>Backup manual</h3><div class="muted">Sem cópia de segurança</div></div></div><div class="warnbox">${n} ${n === 1 ? 'item não tem' : 'itens não têm'} cópia de segurança e pode${n === 1 ? '' : 'm'} perder-se</div><div class="btnrow"><button class="btn" data-act="go" data-v="backup">Detalhes</button><button class="btn primary" data-act="make-backup">Fazer backup</button></div>`;
+  else backup = `<div class="alertcard"><div class="bubble ok">${ic('check', 22)}</div><div><h3>Backup manual</h3><div class="muted">${live ? 'Tudo tem cópia de segurança' : 'Nada para salvar ainda'}</div></div></div><div class="btnrow"><button class="btn" data-act="go" data-v="backup">Detalhes</button></div>`;
+  const trashN = items.filter(i => i.deletedAt).length, alertN = mode === 'real' ? cfg.alerts.length : 0;
+  const rows = [['account', 'user', 'Conta e dados', '', true], ['lockset', 'keypad', 'Tela de bloqueio', cfg.lockEnabled && cfg.pinHash ? 'Ativada' : 'Desativada', mode === 'real'], ['lockstyle', 'lockstyle', 'Estilo de bloqueio', '', mode === 'real'], ['calc', 'calc', 'Calculadora', cfg.calc ? 'Ativada' : 'Desativada', mode === 'real'], ['fake', 'fake', 'Cofre falso', cfg.fakeHash ? 'Configurado' : 'Não configurado', mode === 'real'], ['albumpass', 'key', 'Senhas de álbum', '', true], ['appearance', 'brush', 'Aparência', '', true], ['help', 'help', 'Ajuda e informações', '', true]];
+  $('#main').innerHTML = `<div class="card">${backup}</div>
+    <div class="cols"><button class="card mini" data-act="go" data-v="trash"><span>Lixeira</span><span class="n">${ic('trash', 26)}<span>${trashN}</span></span></button>
+    <button class="card mini" data-act="go" data-v="alerts"><span>Alertas</span><span class="n">${ic('shield', 26)}<span>${alertN}</span></span></button></div>
+    <div class="rows">${rows.filter(r => r[4]).map(r => `<button class="row" data-act="go" data-v="${r[0]}">${ic(r[1])}<span class="grow">${r[2]}${r[3] ? `<span class="sub">${r[3]}</span>` : ''}</span>${ic('chev', 18)}</button>`).join('')}</div>`;
+}
+function viewTrash() {
+  const list = items.filter(i => i.deletedAt).sort((a, b) => b.deletedAt - a.deletedAt); flat = list;
+  if (selected.size) setBar({ title: `${selected.size} ${selected.size === 1 ? 'selecionado' : 'selecionados'}`, actions: [{ id: 'tr-restore', icon: 'restore', label: 'Restaurar' }, { id: 'tr-del', icon: 'trash', label: 'Excluir para sempre' }, { id: 'sel-cancel', icon: 'close', label: 'Cancelar seleção' }] });
+  else setBar({ title: 'Lixeira', back: true, actions: list.length ? [{ id: 'tr-empty', icon: 'trash', label: 'Esvaziar lixeira' }] : [] });
+  if (!list.length) { $('#main').innerHTML = '<div class="empty"><h2>A lixeira está vazia</h2><p>Itens apagados ficam aqui por 30 dias antes de sumirem de vez.</p></div>'; return; }
+  $('#main').innerHTML = `<p class="note">Toque nos itens para restaurar ou excluir para sempre. Eles somem sozinhos depois de 30 dias.</p><div class="day"><div class="grid">${list.map(it => cellHtml(it, `<span class="badge" style="left:auto;right:6px;top:6px;bottom:auto">${Math.max(0, 30 - Math.floor((Date.now() - it.deletedAt) / 864e5))} d</span>`)).join('')}</div></div>`;
+}
+function viewAlerts() {
+  setBar({ title: 'Alertas', back: true, actions: mode === 'real' && cfg.alerts.length ? [{ id: 'alerts-clear', icon: 'trash', label: 'Limpar alertas' }] : [] });
+  const list = mode === 'real' ? cfg.alerts : [];
+  $('#main').innerHTML = list.length ? `<div class="list">${list.map(a => `<div class="li"><span>${esc(a.msg)}</span><span class="muted">${esc(timeFmt.format(new Date(a.t)))}</span></div>`).join('')}</div>` : '<div class="empty"><h2>Nenhum alerta</h2><p>Quando alguém errar o PIN na tela de bloqueio, o registro aparece aqui.</p></div>';
+}
+function viewBackup() {
+  setBar({ title: 'Backup', back: true });
+  const n = unbacked(), live = items.filter(i => !i.deletedAt);
+  const total = live.reduce((s, i) => s + (i.size || 0), 0);
+  $('#main').innerHTML = `<div class="card"><div class="alertcard"><div class="bubble ${n > 0 ? '' : 'ok'}">${ic(n > 0 ? 'warn' : 'check', 22)}</div><div><h3>${n > 0 ? `${n} sem cópia de segurança` : 'Tudo com cópia de segurança'}</h3><div class="muted">${live.length} itens · ${fmtBytes(total)}</div></div></div>
+    <div class="btnrow"><button class="btn primary" data-act="make-backup">${'Criar backup (.zip)'}</button><button class="btn" data-act="restore-backup">Restaurar de um backup</button></div></div>
+    <div class="prose section"><h3>Como funciona</h3><p>O backup é um arquivo .zip que vai para o seu aparelho. Guarde-o fora do navegador, por exemplo no Google Drive ou no computador.</p><p>Ele leva fotos, vídeos, arquivos e álbuns. O PIN não vai junto, e o cofre falso fica de fora.</p><p>Ao restaurar, o Photx soma o conteúdo do backup ao que já existe, sem apagar nada.</p></div>`;
+}
+function viewAccount() {
+  setBar({ title: 'Conta e dados', back: true });
+  const live = items.filter(i => !i.deletedAt), total = items.reduce((s, i) => s + (i.size || 0), 0);
+  $('#main').innerHTML = `<div class="card"><div class="li"><span>Itens</span><b>${live.length}</b></div><div class="li"><span>Álbuns</span><b>${albums.length}</b></div><div class="li"><span>Espaço usado</span><b>${fmtBytes(total)}</b></div><div class="li"><span>Espaço disponível para este site</span><b id="quota">…</b></div><div class="li"><span>Armazenamento protegido contra limpeza</span><b id="persisted">…</b></div></div>
+    <div class="btnrow"><button class="btn" data-act="persist">Pedir proteção contra limpeza</button></div>
+    <p class="note">O Photx não tem conta nem servidor. Seus arquivos ficam só neste navegador, neste aparelho.</p>
+    <div class="section"><h3>Zona de perigo</h3><button class="btn danger block" data-act="wipe">Apagar tudo deste aparelho</button></div>`;
+  if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(e => { const q = $('#quota'); if (q) q.textContent = e.quota ? fmtBytes(e.quota) : 'desconhecido'; });
+  if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then(p => { const q = $('#persisted'); if (q) q.textContent = p ? 'Sim' : 'Não'; });
+}
+function viewLockset() {
+  setBar({ title: 'Tela de bloqueio', back: true });
+  const on = cfg.lockEnabled && !!cfg.pinHash;
+  $('#main').innerHTML = `<div class="card"><div class="row static">${ic('lock')}<span class="grow">Bloquear com PIN<span class="sub">Pede o PIN ao abrir o Photx</span></span>${sw('toggle-lock', on, 'Bloquear com PIN')}</div></div>
+    ${on ? `<div class="rows"><button class="row" data-act="change-pin">${ic('edit')}<span class="grow">Alterar PIN</span>${ic('chev', 18)}</button></div>
+    <div class="section"><h3>Bloquear sozinho</h3><div class="seg">${[[0, 'Na hora'], [30, '30 s'], [60, '1 min'], [300, '5 min']].map(([v, l]) => `<button type="button" data-act="set-autolock" data-v="${v}" aria-pressed="${cfg.autolock === v}">${l}</button>`).join('')}</div><p class="note">Tempo fora do app antes de pedir o PIN de novo.</p></div>
+    <div class="section"><button class="btn block" data-act="lock-now">Bloquear agora</button></div>` : ''}
+    <p class="note">Não há como recuperar um PIN esquecido. A única saída é apagar os dados do site, o que apaga o cofre junto. Faça backup.</p>`;
+}
+function viewLockstyle() {
+  setBar({ title: 'Estilo de bloqueio', back: true });
+  const has = !!cfg.pinHash;
+  $('#main').innerHTML = `<div class="section" style="margin-top:8px"><h3>Tamanho do PIN</h3><div class="seg">${[4, 6].map(n => `<button type="button" data-act="set-len" data-v="${n}" aria-pressed="${cfg.pinLen === n}" ${has ? 'disabled' : ''}>${n} dígitos</button>`).join('')}</div>${has ? '<p class="note">Para mudar o tamanho, desligue o bloqueio e crie um PIN novo.</p>' : ''}</div>
+    <div class="card" style="margin-top:20px"><div class="row static">${ic('keypad')}<span class="grow">Embaralhar teclado<span class="sub">Muda a posição dos números a cada abertura</span></span>${sw('toggle-shuffle', cfg.shuffle, 'Embaralhar teclado')}</div></div>`;
+}
+function viewCalc() {
+  setBar({ title: 'Calculadora', back: true });
+  $('#main').innerHTML = `<div class="card"><div class="row static">${ic('calc')}<span class="grow">Disfarçar como calculadora<span class="sub">A tela de bloqueio vira uma calculadora que funciona</span></span>${sw('toggle-calc', cfg.calc, 'Disfarçar como calculadora')}</div></div>
+    <div class="prose section"><h3>Como abrir</h3><p>Digite o seu PIN e toque em <b>=</b>. O cofre abre. Qualquer outra conta funciona como uma calculadora comum.</p><p>O nome e o ícone do app continuam sendo Photx. Só a tela de bloqueio muda.</p>${cfg.pinHash ? '' : '<p class="muted">Crie um PIN em Tela de bloqueio antes de ligar esta opção.</p>'}</div>`;
+}
+function viewFake() {
+  setBar({ title: 'Cofre falso', back: true });
+  let body;
+  if (!cfg.pinHash) body = `<div class="empty"><h2>Crie um PIN primeiro</h2><p>O cofre falso usa um segundo PIN. Ative o bloqueio com PIN para começar.</p><button class="btn primary" data-act="go" data-v="lockset">Ir para Tela de bloqueio</button></div>`;
+  else if (cfg.fakeHash) body = `<div class="card"><div class="alertcard"><div class="bubble ok">${ic('check', 22)}</div><div><h3>Cofre falso ativo</h3><div class="muted">Aberto pelo PIN falso</div></div></div><div class="btnrow"><button class="btn" data-act="fake-change">Alterar PIN falso</button><button class="btn danger" data-act="fake-remove">Remover</button></div></div>`;
+  else body = `<div class="card"><button class="btn primary block" data-act="fake-create">Criar PIN do cofre falso</button></div>`;
+  $('#main').innerHTML = body + `<div class="prose section"><h3>Para que serve</h3><p>Digite o PIN falso na tela de bloqueio e o Photx abre um cofre separado, com os mesmos menus e vazio. Guarde nele o que pode ser visto.</p><p>Os dois cofres não se misturam. Dentro do cofre falso, as opções de segurança ficam escondidas.</p></div>`;
+}
+function viewAlbumpass() {
+  setBar({ title: 'Senhas de álbum', back: true });
+  $('#main').innerHTML = `<div class="rows">${sortedAlbums().map(a => `<button class="row" data-act="ap-album" data-id="${esc(a.id)}">${ic(a.passHash ? 'lock' : 'key')}<span class="grow">${esc(a.name)}<span class="sub">${a.passHash ? 'Protegido por senha' : 'Sem senha'}</span></span>${ic('chev', 18)}</button>`).join('')}</div><p class="note">Álbum com senha fica com a capa escondida e pede a senha ao abrir. Não há recuperação de senha esquecida.</p>`;
+}
+function viewAppearance() {
+  setBar({ title: 'Aparência', back: true });
+  $('#main').innerHTML = `<div class="section" style="margin-top:8px"><h3>Tema</h3><div class="seg">${[['dark', 'Escuro'], ['light', 'Claro'], ['system', 'Sistema']].map(([v, l]) => `<button type="button" data-act="set-theme" data-v="${v}" aria-pressed="${cfg.theme === v}">${l}</button>`).join('')}</div></div>
+    <div class="section"><h3>Cor de destaque</h3><div class="swatches">${Object.entries(ACCENTS).map(([k, [name, col]]) => `<button type="button" class="swatch" style="background:${col}" data-act="set-accent" data-v="${k}" aria-pressed="${cfg.accent === k}" aria-label="${name}">${cfg.accent === k ? ic('check', 20) : ''}</button>`).join('')}</div></div>`;
+}
+function viewHelp() {
+  setBar({ title: 'Ajuda e informações', back: true });
+  $('#main').innerHTML = `<div class="prose"><h3>Onde ficam meus arquivos</h3><p>Só neste navegador, neste aparelho. Nada é enviado para internet. Por isso não existe sincronização entre aparelhos.</p>
+    <h3>O que o PIN protege</h3><p>O PIN e a senha de álbum escondem o conteúdo na tela do app. Eles não criptografam os arquivos. Quem tiver acesso técnico ao aparelho desbloqueado e souber mexer no navegador consegue ler os dados.</p>
+    <h3>Como não perder tudo</h3><p>Limpar os dados do site ou desinstalar o navegador apaga o cofre. Faça backup em Meu cofre &gt; Backup e guarde o .zip em outro lugar.</p>
+    <h3>Lixeira</h3><p>Itens apagados ficam 30 dias na lixeira e depois somem sozinhos.</p>
+    <h3>Instalar no celular</h3><p>No Chrome, abra o menu e toque em Instalar app. O Photx passa a abrir em tela cheia e funciona sem internet.</p></div>`;
+}
+
+/* ---------- visualizador ---------- */
+function paintViewer() {
+  const v = $('#viewer'), it = route.viewer ? byId(route.viewer) : null;
+  if (!it) {
+    if (!v.hidden) { v.hidden = true; document.body.style.overflow = ''; const vid = $('#vstage video'); if (vid) vid.pause(); $$('#vstage .media').forEach(n => n.remove()); }
+    return;
+  }
+  let idx = flat.findIndex(i => i.id === it.id);
+  const list = idx < 0 ? flat.concat([it]) : flat; if (idx < 0) idx = list.length - 1;
+  const src = srcOf(it), stage = $('#vstage');
+  v.hidden = false; document.body.style.overflow = 'hidden';
+  $$('#vstage .media').forEach(n => n.remove());
+  const node = document.createElement('div'); node.className = 'media'; node.style.cssText = 'max-width:100%;max-height:100%;display:grid;place-items:center;min-height:0;';
+  if (it.kind === 'image') node.innerHTML = `<img src="${src}" alt="${esc(it.name)}">`;
+  else if (it.kind === 'video') node.innerHTML = `<video src="${src}" controls playsinline></video>`;
+  else node.innerHTML = `<div class="filecard"><div class="ext">${esc((extOf(it.name) || 'arq').toUpperCase())}</div><div>${esc(it.name)}</div><a class="btn" target="_blank" rel="noopener" href="${src}">Abrir arquivo</a></div>`;
+  stage.insertBefore(node, stage.firstChild);
+  $('#vbar').innerHTML = `<button class="ibtn" data-act="v-close" aria-label="Fechar">${ic('close')}</button><div class="vtitle">${esc(it.name)}</div>
+    <button class="ibtn" data-act="v-fav" aria-label="${it.fav ? 'Tirar dos favoritos' : 'Favoritar'}" style="${it.fav ? 'color:#ffd24a' : ''}">${ic('star')}</button>
+    <button class="ibtn" data-act="v-move" aria-label="Mover para outro álbum">${ic('move')}</button>
+    <a class="ibtn" href="${src}" download="${esc(it.name || 'arquivo')}" aria-label="Baixar" style="color:inherit">${ic('download')}</a>
+    <button class="ibtn" data-act="v-del" aria-label="Mover para a lixeira">${ic('trash')}</button>`;
+  $('#vmeta').textContent = `${fmtBytes(it.size || 0)} · ${timeFmt.format(new Date(when(it)))} · ${idx + 1} de ${list.length}`;
+  $('#vprev').disabled = idx === 0; $('#vnext').disabled = idx === list.length - 1;
+  $('#vprev').innerHTML = ic('chev', 28).replace('<svg', '<svg style="transform:scaleX(-1)"'); $('#vnext').innerHTML = ic('chev', 28);
+}
+function stepViewer(d) {
+  const i = flat.findIndex(x => x.id === route.viewer), n = flat[i + d];
+  if (n) { route = Object.assign({}, route, { viewer: n.id }); history.replaceState(route, ''); paintViewer(); }
+}
+const closeViewer = () => { if (route.viewer) history.back(); };
+
+/* ---------- ações sobre itens ---------- */
+async function trashItems(ids) {
+  const t = Date.now();
+  for (const id of ids) { const it = byId(id); if (it) { it.deletedAt = t; await saveItem(it); } }
+  toast(`${ids.length} ${ids.length === 1 ? 'item movido' : 'itens movidos'} para a lixeira`, 'Desfazer', async () => { for (const id of ids) { const it = byId(id); if (it) { delete it.deletedAt; await saveItem(it); } } paint(); });
+}
+async function destroyItems(ids) {
+  for (const id of ids) { const it = byId(id); if (!it) continue; await dbDel('items', id); if (it._url) URL.revokeObjectURL(it._url); items = items.filter(x => x.id !== id); }
+}
+async function restoreItems(ids) {
+  for (const id of ids) { const it = byId(id); if (!it) continue; delete it.deletedAt; if (!albumById(it.albumId)) it.albumId = 'main'; await saveItem(it); }
+}
+async function unlockAlbum(a) {
+  const r = await dialog({ title: a.name, text: 'Este álbum tem senha.', input: { type: 'password', placeholder: 'Senha' }, ok: 'Abrir', validate: async v => (await hashSecret(v.value, a.passSalt)) === a.passHash ? null : 'Senha incorreta' });
+  if (!r) return false; unlockedAlbums.add(a.id); return true;
+}
+async function moveItems(ids) {
+  const targets = sortedAlbums().filter(a => !albumLocked(a));
+  const r = await dialog({ title: 'Mover para', choices: targets.map(a => ({ label: a.name })), cancel: 'Cancelar' });
+  if (!r || r.choice == null) return;
+  const to = targets[r.choice];
+  for (const id of ids) { const it = byId(id); if (it) { it.albumId = to.id; await saveItem(it); } }
+  toast(`Movido para ${to.name}`);
+}
+async function setAlbumPassword(a) {
+  const r = await dialog({ title: 'Senha do álbum', text: `Defina a senha de “${a.name}”. Não há recuperação se você esquecer.`, input: { type: 'password', placeholder: 'Nova senha (mínimo 4 caracteres)' }, input2: { type: 'password', placeholder: 'Repita a senha' }, ok: 'Salvar', validate: v => v.value.length < 4 ? 'Use pelo menos 4 caracteres' : v.value !== v.value2 ? 'As senhas não são iguais' : null });
+  if (!r) return;
+  a.passSalt = newSalt(); a.passHash = await hashSecret(r.value, a.passSalt); await dbPut('albums', a); unlockedAlbums.add(a.id); paint();
+}
+async function removeAlbumPassword(a) {
+  const r = await dialog({ title: 'Remover senha', text: `Digite a senha atual de “${a.name}”.`, input: { type: 'password', placeholder: 'Senha atual' }, ok: 'Remover senha', danger: true, validate: async v => (await hashSecret(v.value, a.passSalt)) === a.passHash ? null : 'Senha incorreta' });
+  if (!r) return;
+  delete a.passHash; delete a.passSalt; await dbPut('albums', a); unlockedAlbums.delete(a.id); paint();
+}
+async function newAlbum() {
+  const r = await dialog({ title: 'Novo álbum', input: { placeholder: 'Nome do álbum' }, ok: 'Criar', validate: v => v.value.trim() ? null : 'Digite um nome' });
+  if (!r) return;
+  const a = { id: newId(), name: r.value.trim(), createdAt: Date.now() }; await dbPut('albums', a); albums.push(a); paint();
+}
+async function renameAlbum(a) {
+  const r = await dialog({ title: 'Renomear álbum', input: { value: a.name }, ok: 'Salvar', validate: v => v.value.trim() ? null : 'Digite um nome' });
+  if (!r) return; a.name = r.value.trim(); await dbPut('albums', a); paint();
+}
+async function deleteAlbum(a) {
+  const n = items.filter(i => !i.deletedAt && i.albumId === a.id).length;
+  const r = await dialog({ title: 'Excluir álbum', text: n ? `Os ${n} itens deste álbum vão para a lixeira e podem ser restaurados em até 30 dias.` : 'O álbum está vazio.', ok: 'Excluir álbum', danger: true });
+  if (!r) return;
+  const t = Date.now();
+  for (const it of items.filter(i => !i.deletedAt && i.albumId === a.id)) { it.deletedAt = t; await saveItem(it); }
+  await dbDel('albums', a.id); albums = albums.filter(x => x.id !== a.id);
+  route = { view: 'albums', albumId: null, viewer: null }; history.replaceState(route, ''); paint();
+}
+
+/* ---------- envio ---------- */
+async function uploadFiles(list, albumId) {
+  const files = Array.from(list), errs = []; let ok = 0;
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    toast(`Salvando ${i + 1} de ${files.length}…`, null, null, true);
+    if (!f.size) { errs.push(`${f.name}: arquivo vazio`); continue; }
+    if (f.size > MAX_BYTES) { errs.push(`${f.name}: passa de ${fmtBytes(MAX_BYTES)}`); continue; }
+    const it = { id: newId(), name: f.name || 'arquivo', kind: kindFor(f), mime: f.type || 'application/octet-stream', size: f.size, takenAt: f.lastModified || Date.now(), addedAt: Date.now(), fav: false, albumId, blob: f };
+    try { await saveItem(it); items.push(it); ok++; }
+    catch (e) { errs.push(`${f.name}: ${e && e.name === 'QuotaExceededError' ? 'o armazenamento do navegador está cheio' : 'não foi possível salvar'}`); }
+  }
+  if (ok && navigator.storage && navigator.storage.persist) { try { navigator.storage.persist(); } catch (e) {} }
+  const a = albumById(albumId);
+  toast(ok ? `${ok} ${ok === 1 ? 'arquivo salvo' : 'arquivos salvos'} em ${a ? a.name : 'Álbum principal'}` : 'Nada foi salvo');
+  paint();
+  if (errs.length) dialog({ title: 'Alguns arquivos não foram salvos', text: errs.join('\n'), ok: 'Entendi', cancel: false });
+}
+function openSheet() {
+  const def = route.view === 'album' && albumById(route.albumId) ? route.albumId : 'main';
+  $('#sheetcard').innerHTML = `<h2>Adicionar fotos</h2><label class="lbl" for="sAlbum">Salvar em</label>
+    <select id="sAlbum" class="field">${sortedAlbums().map(a => `<option value="${esc(a.id)}" ${a.id === def ? 'selected' : ''}>${esc(a.name)}${a.passHash ? ' (com senha)' : ''}</option>`).join('')}</select>
+    <div class="srcs"><button type="button" class="src" data-src="gallery">${ic('image', 26)}<span>Galeria</span></button><button type="button" class="src" data-src="photo">${ic('camera', 26)}<span>Fotografia</span></button><button type="button" class="src" data-src="video">${ic('video', 26)}<span>Vídeo</span></button><button type="button" class="src" data-src="files">${ic('file', 26)}<span>Arquivos</span></button></div>
+    <button type="button" class="btn" data-act="sheet-close">Cancelar</button>`;
+  $('#sheet').hidden = false;
+}
+$('#sheet').addEventListener('click', async e => {
+  if (e.target.id === 'sheet' || e.target.closest('[data-act="sheet-close"]')) { $('#sheet').hidden = true; return; }
+  const b = e.target.closest('[data-src]'); if (!b) return;
+  const a = albumById($('#sAlbum').value);
+  if (albumLocked(a) && !(await unlockAlbum(a))) return;
+  pendingAlbum = a.id; $('#sheet').hidden = true; suppressLock = true;
+  $({ gallery: '#fGallery', photo: '#fPhoto', video: '#fVideo', files: '#fFiles' }[b.dataset.src]).click();
+});
+['#fGallery', '#fPhoto', '#fVideo', '#fFiles'].forEach(s => $(s).addEventListener('change', function () { const l = Array.from(this.files); this.value = ''; if (l.length) uploadFiles(l, pendingAlbum); }));
+let dragDepth = 0;
+const hasFiles = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+window.addEventListener('dragenter', e => { if (locked || !hasFiles(e)) return; dragDepth++; $('#drop').hidden = false; });
+window.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) $('#drop').hidden = true; });
+window.addEventListener('dragover', e => { if (!locked) e.preventDefault(); });
+window.addEventListener('drop', e => {
+  if (locked) return; e.preventDefault(); dragDepth = 0; $('#drop').hidden = true;
+  if (e.dataTransfer && e.dataTransfer.files.length) { const a = route.view === 'album' && albumById(route.albumId); uploadFiles(e.dataTransfer.files, a && !albumLocked(a) ? a.id : 'main'); }
+});
+document.addEventListener('paste', e => {
+  if (locked || (e.target && /input|textarea/i.test(e.target.tagName))) return;
+  const fs = e.clipboardData && e.clipboardData.files;
+  if (fs && fs.length) { e.preventDefault(); const a = route.view === 'album' && albumById(route.albumId); uploadFiles(fs, a && !albumLocked(a) ? a.id : 'main'); }
+});
+
+/* ---------- backup ---------- */
+async function makeBackup() {
+  const live = items.filter(i => !i.deletedAt);
+  if (!live.length) { toast('Nada para salvar ainda'); return; }
+  try {
+    toast('Gerando backup…', null, null, true);
+    const meta = { app: 'photx', version: 2, createdAt: Date.now(), albums: albums.map(a => Object.assign({}, a)), items: live.map(i => { const r = Object.assign({}, i); delete r.blob; delete r._url; return r; }) };
+    const entries = [{ name: 'photx.json', blob: new Blob([JSON.stringify(meta)], { type: 'application/json' }) }].concat(live.map(i => ({ name: 'files/' + i.id, blob: i.blob })));
+    const zip = await buildZip(entries);
+    const d = new Date(), name = `photx-backup-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}.zip`;
+    const url = URL.createObjectURL(zip), a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    const t = Date.now(); for (const it of live) { it.backedAt = t; await saveItem(it); }
+    toast('Backup criado. Guarde o arquivo .zip em outro lugar.'); paint();
+  } catch (e) { toast('Não foi possível criar o backup: ' + (e && e.message ? e.message : 'erro')); }
+}
+async function restoreBackup(file) {
+  try {
+    toast('Lendo backup…', null, null, true);
+    const entries = await readZipEntries(file), map = new Map(entries.map(e => [e.name, e]));
+    const mj = map.get('photx.json'); if (!mj || mj.method !== 0) throw new Error('este arquivo não é um backup do Photx');
+    const meta = JSON.parse(await (await zipEntryBlob(file, mj, 'application/json')).text());
+    if (meta.app !== 'photx') throw new Error('este arquivo não é um backup do Photx');
+    for (const a of meta.albums || []) if (!albumById(a.id)) { await dbPut('albums', a); albums.push(a); }
+    let n = 0;
+    for (const m of meta.items || []) {
+      if (byId(m.id)) continue; const e = map.get('files/' + m.id); if (!e || e.method !== 0) continue;
+      const it = Object.assign({}, m, { blob: await zipEntryBlob(file, e, m.mime), backedAt: Date.now() }); delete it.deletedAt;
+      if (!albumById(it.albumId)) it.albumId = 'main';
+      await saveItem(it); items.push(it); n++;
+    }
+    toast(n ? `${n} ${n === 1 ? 'item restaurado' : 'itens restaurados'}` : 'Nada novo para restaurar'); paint();
+  } catch (e) { toast('Não foi possível restaurar: ' + (e && e.message ? e.message : 'erro')); }
+}
+$('#fRestore').addEventListener('change', function () { const f = this.files[0]; this.value = ''; if (f) restoreBackup(f); });
+
+/* ---------- ações (cliques) ---------- */
+$('#main').addEventListener('click', e => {
+  const cell = e.target.closest('.cell'); if (!cell) return;
+  const id = cell.dataset.id;
+  if (route.view === 'trash' || e.target.closest('[data-check]') || selected.size > 0) { if (selected.has(id)) selected.delete(id); else selected.add(id); paint(); return; }
+  push({ viewer: id });
+});
+$('#chips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; filter = b.dataset.f; paint(); });
+$('#q').addEventListener('input', function () { query = this.value; paint(); });
+const setSelAct = async act => {
+  const ids = Array.from(selected);
+  if (act === 'sel-fav') { const mk = ids.some(id => { const it = byId(id); return it && !it.fav; }); for (const id of ids) { const it = byId(id); if (it) { it.fav = mk; await saveItem(it); } } selected.clear(); paint(); }
+  else if (act === 'sel-move') { await moveItems(ids); selected.clear(); paint(); }
+  else if (act === 'sel-del') { selected.clear(); await trashItems(ids); paint(); }
+};
+document.addEventListener('click', async e => {
+  const t = e.target.closest('[data-act]'); if (!t || locked) return;
+  const act = t.dataset.act, v = t.dataset.v, id = t.dataset.id;
+  const album = albumById(route.albumId);
+  switch (act) {
+    case 'back': history.back(); break;
+    case 'go': go(v); break;
+    case 'cloud': go('backup'); break;
+    case 'nav-menu': go('settings'); break;
+    case 'nav-all': go('all'); break;
+    case 'nav-add': openSheet(); break;
+    case 'newmenu': showMenu([{ act: 'new-album', icon: 'folderPlus', label: 'Criar álbum' }, { act: 'restore-backup', icon: 'upload', label: 'Restaurar de um backup' }]); break;
+    case 'new-album': await newAlbum(); break;
+    case 'restore-backup': suppressLock = true; $('#fRestore').click(); break;
+    case 'make-backup': await makeBackup(); break;
+    case 'open-album': { const a = albumById(id); if (!a) break; if (albumLocked(a) && !(await unlockAlbum(a))) break; push({ view: 'album', albumId: a.id }); break; }
+    case 'albummenu': if (album) showMenu([].concat(album.main ? [] : [{ act: 'rename-album', icon: 'edit', label: 'Renomear' }], [{ act: 'album-pass', icon: 'key', label: album.passHash ? 'Senha do álbum' : 'Colocar senha' }], album.main ? [] : [{ act: 'delete-album', icon: 'trash', label: 'Excluir álbum' }])); break;
+    case 'rename-album': if (album) await renameAlbum(album); break;
+    case 'delete-album': if (album) await deleteAlbum(album); break;
+    case 'album-pass': if (album) await albumPassFlow(album); break;
+    case 'ap-album': { const a = albumById(id); if (a) await albumPassFlow(a); break; }
+    case 'sel-cancel': selected.clear(); paint(); break;
+    case 'sel-fav': case 'sel-move': case 'sel-del': await setSelAct(act); break;
+    case 'tr-restore': { const ids = Array.from(selected); selected.clear(); await restoreItems(ids); toast('Restaurado'); paint(); break; }
+    case 'tr-del': { const ids = Array.from(selected); const r = await dialog({ title: 'Excluir para sempre', text: `${ids.length} ${ids.length === 1 ? 'item será apagado' : 'itens serão apagados'} e não dá para desfazer.`, ok: 'Excluir', danger: true }); if (r) { selected.clear(); await destroyItems(ids); paint(); } break; }
+    case 'tr-empty': { const ids = items.filter(i => i.deletedAt).map(i => i.id); const r = await dialog({ title: 'Esvaziar lixeira', text: 'Tudo que está na lixeira será apagado para sempre.', ok: 'Esvaziar', danger: true }); if (r) { selected.clear(); await destroyItems(ids); paint(); } break; }
+    case 'alerts-clear': cfg.alerts = []; saveCfg(); paint(); break;
+    case 'hint-pin': go('lockset'); break;
+    case 'hint-dismiss': cfg.hintDismissed = true; saveCfg(); paint(); break;
+    case 'v-close': closeViewer(); break;
+    case 'v-prev': stepViewer(-1); break;
+    case 'v-next': stepViewer(1); break;
+    case 'v-fav': { const it = byId(route.viewer); if (it) { it.fav = !it.fav; await saveItem(it); paintViewer(); } break; }
+    case 'v-move': { const it = byId(route.viewer); if (it) { await moveItems([it.id]); paint(); } break; }
+    case 'v-del': { const it = byId(route.viewer); if (!it) break; const i = flat.findIndex(x => x.id === it.id), nb = flat[i + 1] || flat[i - 1]; if (nb && nb.id !== it.id) { route = Object.assign({}, route, { viewer: nb.id }); history.replaceState(route, ''); } else closeViewer(); await trashItems([it.id]); setTimeout(paint, 0); break; }
+    case 'toggle-lock': await toggleLock(); break;
+    case 'change-pin': await changePin(); break;
+    case 'set-autolock': cfg.autolock = +v; saveCfg(); paint(); break;
+    case 'lock-now': lockNow(); break;
+    case 'set-len': if (!cfg.pinHash) { cfg.pinLen = +v; saveCfg(); paint(); } break;
+    case 'toggle-shuffle': cfg.shuffle = !cfg.shuffle; saveCfg(); paint(); break;
+    case 'toggle-calc':
+      if (!cfg.calc && !(cfg.lockEnabled && cfg.pinHash)) { toast('Crie um PIN em Tela de bloqueio primeiro'); break; }
+      cfg.calc = !cfg.calc; saveCfg(); paint(); break;
+    case 'fake-create': case 'fake-change': await fakePin(); break;
+    case 'fake-remove': { const r = await dialog({ title: 'Remover cofre falso', text: 'O PIN falso deixa de funcionar e os arquivos do cofre falso são apagados.', ok: 'Remover', danger: true }); if (r) { cfg.fakeHash = ''; cfg.fakeSalt = ''; saveCfg(); await new Promise(res => { const q = indexedDB.deleteDatabase('photx-fake'); q.onsuccess = q.onerror = q.onblocked = res; }); paint(); } break; }
+    case 'set-theme': cfg.theme = v; saveCfg(); applyTheme(); paint(); break;
+    case 'set-accent': cfg.accent = v; saveCfg(); applyTheme(); paint(); break;
+    case 'persist': { const ok = navigator.storage && navigator.storage.persist ? await navigator.storage.persist() : false; toast(ok ? 'Armazenamento protegido contra limpeza automática' : 'O navegador não concedeu a proteção'); paint(); break; }
+    case 'wipe': { const r = await dialog({ title: 'Apagar tudo', text: 'Isso apaga todos os arquivos, álbuns, o PIN e os ajustes deste aparelho. Não dá para desfazer.', ok: 'Apagar tudo', danger: true }); if (!r) break; if (idb) { try { idb.close(); } catch (x) {} } for (const n of ['photx', 'photx-fake']) await new Promise(res => { const q = indexedDB.deleteDatabase(n); q.onsuccess = q.onerror = q.onblocked = res; }); try { localStorage.removeItem(CFG_KEY); } catch (x) {} location.reload(); break; }
+  }
+});
+async function albumPassFlow(a) {
+  if (!a.passHash) return setAlbumPassword(a);
+  const r = await dialog({ title: a.name, choices: [{ label: 'Alterar senha' }, { label: 'Remover senha', danger: true }] });
+  if (!r) return;
+  if (r.choice === 0) {
+    const ok = await dialog({ title: 'Senha atual', input: { type: 'password', placeholder: 'Senha atual' }, ok: 'Continuar', validate: async v => (await hashSecret(v.value, a.passSalt)) === a.passHash ? null : 'Senha incorreta' });
+    if (ok) await setAlbumPassword(a);
+  } else await removeAlbumPassword(a);
+}
+async function toggleLock() {
+  if (cfg.lockEnabled && cfg.pinHash) {
+    const cur = await verifyCurrentPin(); if (cur == null) return;
+    Object.assign(cfg, { lockEnabled: false, pinHash: '', pinSalt: '', calc: false }); saveCfg(); paint(); toast('Bloqueio desligado'); return;
+  }
+  const p = await createPin({ title: 'Criar PIN', validate: async () => null }); if (p == null) return;
+  cfg.pinSalt = newSalt(); cfg.pinHash = await hashSecret(p, cfg.pinSalt); cfg.lockEnabled = true; saveCfg(); paint(); toast('Bloqueio ativado. Anote seu PIN: não há como recuperar.');
+}
+async function changePin() {
+  const cur = await verifyCurrentPin(); if (cur == null) return;
+  const p = await createPin({ title: 'Novo PIN', validate: async p => cfg.fakeHash && (await hashSecret(p, cfg.fakeSalt)) === cfg.fakeHash ? 'Use um PIN diferente do PIN falso' : null });
+  if (p == null) return;
+  cfg.pinSalt = newSalt(); cfg.pinHash = await hashSecret(p, cfg.pinSalt); saveCfg(); toast('PIN alterado');
+}
+async function fakePin() {
+  const p = await createPin({ title: 'PIN do cofre falso', validate: async p => (await hashSecret(p, cfg.pinSalt)) === cfg.pinHash ? 'Use um PIN diferente do PIN real' : null });
+  if (p == null) return;
+  cfg.fakeSalt = newSalt(); cfg.fakeHash = await hashSecret(p, cfg.fakeSalt); saveCfg(); paint(); toast('Cofre falso pronto');
+}
+document.addEventListener('keydown', e => {
+  if (locked || !$('#pinmodal').hidden || !$('#dialog').hidden) return;
+  if (!$('#viewer').hidden) { if (e.key === 'Escape') closeViewer(); else if (e.key === 'ArrowLeft') stepViewer(-1); else if (e.key === 'ArrowRight') stepViewer(1); }
+  else if (e.key === 'Escape') { if (!$('#menuwrap').hidden) hideMenu(); else if (!$('#sheet').hidden) $('#sheet').hidden = true; else if (selected.size) { selected.clear(); paint(); } }
+});
+
+/* ---------- início ---------- */
+async function init() {
+  applyTheme();
+  $('#searchic').innerHTML = ic('search', 20);
+  $('#bottom').innerHTML = `<button class="nb" data-act="nav-menu" aria-label="Meu cofre">${ic('menu')}</button><button class="fab" data-act="nav-add" aria-label="Adicionar">${ic('plus', 30)}</button><button class="nb" data-act="nav-all" aria-label="Todos os itens">${ic('grid')}</button>`;
+  history.replaceState(route, '');
+  if (!window.indexedDB) { locked = false; setBar({ title: 'Photx', big: true }); $('#main').innerHTML = '<div class="empty"><h2>Armazenamento indisponível</h2><p>Este navegador não permite guardar arquivos. Tente fora da aba anônima.</p></div>'; return; }
+  try { if (cfg.lockEnabled && cfg.pinHash) showLock(); else await openVault('real'); }
+  catch (e) { locked = false; setBar({ title: 'Photx', big: true }); $('#main').innerHTML = '<div class="empty"><h2>Não foi possível abrir o cofre</h2><p>O navegador bloqueou o armazenamento. Tente fora da aba anônima.</p></div>'; }
+  if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+init();
+})();
+</script>
+</body>
+</html>
